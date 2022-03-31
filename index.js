@@ -112,7 +112,7 @@ async function main() {
 
                   const destination = path.join(worktree.path, ignore.file);
 
-                  await run('cp', ['-r', source, destination]);
+                  await run('cp', ['-pr', source, destination]);
                 });
               } catch (error) {
                 console.error(error);
@@ -155,7 +155,7 @@ async function main() {
         let rootPath = worktrees[0]?.root || resolve(process.cwd(), '..');
         const newPath = path.resolve(rootPath, name);
         // Create the branch if it doesn't exist
-        await run('git', ['branch', newPath]).catch(() => {});
+        await run('git', ['branch', name]).catch(() => {});
         await run('git', ['worktree', 'add', newPath, name]);
         // Update worktrees
         worktrees = await Worktree.list();

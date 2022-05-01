@@ -14,6 +14,8 @@ async function main() {
    * @param {typeof worktrees[0]} worktree
    */
   const editWorktree = (worktree) => {
+    let shouldQuit = false;
+
     return new Promise(async (resolve, reject) => {
       try {
         await menu(`Edit worktree: ${worktree.name}`, [
@@ -122,21 +124,56 @@ async function main() {
           [
             'Delete worktree',
             async () => {
+              // Get a list of all modified files in the worktree
+              const modifiedFiles = (
+                await run('git', [
+                  '-C',
+                  worktree.path,
+                  'ls-files',
+                  '-mo',
+                  '--exclude-standard',
+                ])
+              )
+                .trim()
+                .split('\n');
+
               // Confirm
               const { confirm } = await inquirer.prompt([
                 {
                   type: 'confirm',
                   name: 'confirm',
-                  message: `Are you sure you want to delete ${worktree.name}?`,
+                  message: modifiedFiles.length
+                    ? [
+                        'The following files would be deleted:',
+                        ...modifiedFiles.map((file) => `- ${file}`),
+                        `Are you sure you want to delete ${worktree.name}?`,
+                      ].join('\n')
+                    : `Are you sure you want to delete ${worktree.name}?`,
                 },
               ]);
               if (!confirm) return resolve();
-              await run('git', ['worktree', 'remove', worktree.path]);
+              await run('git', [
+                'worktree',
+                'remove',
+                '--force',
+                worktree.path,
+              ]);
+            },
+          ],
+          [
+            'Back',
+            () => {
+              shouldQuit = true;
             },
           ],
         ]);
         worktrees = await Worktree.list();
-        resolve();
+
+        if (!shouldQuit) {
+          resolve(editWorktree(worktree));
+        } else {
+          resolve();
+        }
       } catch (error) {
         reject(error);
       }

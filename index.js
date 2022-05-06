@@ -135,7 +135,8 @@ async function main() {
                 ])
               )
                 .trim()
-                .split('\n');
+                .split('\n')
+                .filter((file) => !!file.trim());
 
               // Confirm
               const { confirm } = await inquirer.prompt([
@@ -158,6 +159,8 @@ async function main() {
                 '--force',
                 worktree.path,
               ]);
+              // Need to go back to the main menu, because this worktree is gone
+              shouldQuit = true;
             },
           ],
           [
